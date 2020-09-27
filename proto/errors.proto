@@ -1,0 +1,17 @@
+syntax = "proto3";
+package decus.errors;
+
+option go_package = "protoimport/errors";
+
+
+// Error wraps an error code as well as an error message into a single proto message
+message Error {
+  Codes code = 1;
+  string message = 2;
+}
+
+// Codes specifies all error codes that might happen during requests - add more if necessary
+enum Codes {
+  CODE_UNSPECIFIED = 0;
+  CODE_PERMISSION_DENIED = 1;
+}

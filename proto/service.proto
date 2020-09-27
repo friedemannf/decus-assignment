@@ -1,0 +1,88 @@
+syntax = "proto3";
+package decus.assignment;
+
+option go_package = "protoimport/assignment";
+
+import "errors.proto";
+
+service ApikeyService {
+  // AddApikey adds a new apikey to the user
+  rpc AddApikey (AddApikeyRequest) returns (AddApikeyResponse) {
+  }
+  // ListApikeys lists all currently added apikeys for the specified user
+  rpc ListApikeys (ListApikeysRequest) returns (ListApikeysResponse) {
+  }
+  //GetApikey requests full plaintext access to the specified apikey
+  rpc GetApikey (GetApikeyRequest) returns (GetApikeyResponse) {
+  }
+  // GetApikeyLogs returns a list of audit log entries for the specified apikey
+  // Such as, when the apikey was accessed and by whom
+  rpc GetApikeyLogs (GetApikeyLogsRequest) returns (GetApikeyLogsResponse) {
+  }
+}
+
+// Apikey contains all the visible information about an added apikey
+message Apikey {
+  string apikey_id = 1; // UUIDv4
+  string custodian = 2; // The name of the custodian that the apikey belongs to
+  string apikey_preview = 3; // The first five characters of the apikey
+}
+// ApikeyExtended contains the visible information about an apikey as well as
+// the private information (apikey&secret) about an added apikey
+message ApikeyExtended {
+  Apikey apikey_details = 1;
+  string apikey = 2; // The apikey in plaintext
+  string secret = 3; // The secret in plaintext
+}
+
+message AddApikeyRequest {
+  string user_id = 1; // For which user to add the apikey to
+  string custodian = 2; // The name of the custodian - every custodian may only be added once
+
+  string apikey = 3; // The apikey in plaintext
+  string secret = 4; // The secret in plaintext
+}
+message AddApikeyResponse {
+  errors.Error error = 1;
+
+  string apikey_id = 2;
+}
+
+message ListApikeysRequest {
+  string user_id = 1;
+}
+message ListApikeysResponse {
+  errors.Error error = 1;
+  repeated Apikey apikeys = 2;
+}
+
+message GetApikeyRequest {
+  string apikey_id = 1;
+  Requester requester = 2;
+}
+message GetApikeyResponse {
+  errors.Error error = 1;
+  ApikeyExtended apikey = 2;
+}
+
+message GetApikeyLogsRequest {
+  string apikey_id = 1;
+}
+message GetApikeyLogsResponse {
+  message LogEntry {
+    uint64 timestamp = 1; // The unix timestamp (in milliseconds) that the log event happened
+    Requester requester = 2; // The requester which requested access to the apikey
+    string action = 3; // The action that was requested (currently only one exists = accessSecret)
+  }
+
+  errors.Error error = 1;
+  repeated LogEntry logs = 2;
+}
+
+// Requester specifies the different functions that can access a (plaintext) apikey
+enum Requester {
+  REQUESTER_UNSPECIFIED = 0; // Default, should never be used
+  REQUESTER_USER = 1;
+  REQUESTER_ADMIN = 2;
+  REQUESTER_EXECUTION = 3;
+}
